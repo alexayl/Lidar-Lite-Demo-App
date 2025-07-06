@@ -1,47 +1,32 @@
-/*
- * Copyright (c) 2021 Nordic Semiconductor ASA
- * SPDX-License-Identifier: Apache-2.0
- */
-
 #include <zephyr/kernel.h>
+#include <stdlib.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-
-#define BLINK_PERIOD_MS_STEP 100U
-#define BLINK_PERIOD_MS_MAX  1000U
 
 int main(void)
 {
-	int ret;
-	unsigned int period_ms = BLINK_PERIOD_MS_MAX;
-	const struct device *sensor;
-	struct sensor_value last_val = { 0 }, val;
+    const struct device *lidar = DEVICE_DT_GET(DT_ALIAS(lidarlite));
+    
+    while (1) {
+        if (sensor_sample_fetch(lidar)) {
+            printk("sad\n");
+        } else {
+            printk("happy\n");
+        }
+        k_msleep(500);
+    }
+    // if (!device_is_ready(lidar)) {
+    //     printk("LIDAR not ready\n");
+    //     return EXIT_FAILURE;
+    // }
 
-	sensor = DEVICE_DT_GET(DT_NODELABEL(example_sensor));
-	if (!device_is_ready(sensor)) {
-		printk("Sensor not ready");
-		return 0;
-	}
+    // while (1) {
+    //     sensor_sample_fetch(lidar);
+    //     struct sensor_value val;
+    //     sensor_channel_get(lidar, SENSOR_CHAN_DISTANCE, &val);
+    //     printk("Distance: %d cm\n", val.val1);
+    //     k_msleep(500);
+    // }
 
-	printk("Use the sensor to change LED blinking period\n");
-
-	while (1) {
-		ret = sensor_sample_fetch(sensor);
-		if (ret < 0) {
-			printk("Could not fetch sample (%d)", ret);
-			return 0;
-		}
-
-		ret = sensor_channel_get(sensor, SENSOR_CHAN_PROX, &val);
-		if (ret < 0) {
-			printk("Could not get sample (%d)", ret);
-			return 0;
-		}
-
-		last_val = val;
-
-		k_sleep(K_MSEC(100));
-	}
-
-	return 0;
+    return EXIT_SUCCESS;
 }
-
